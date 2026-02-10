@@ -120,14 +120,14 @@ Apri il browser su: http://127.0.0.1:5000
 
 ## 📸 Screenshots
 
-### Tema Corporate (Default)
-![Corporate Theme](💼)
+### Tema Corporate (Default) 💼
+![Corporate Theme](/static/corporate.png)
 
-### Tema Dark
-![Dark Theme](🌙)
+### Tema Dark 🌙
+![Dark Theme](/static/dark.png)
 
-### Tema Sunset
-![Sunset Theme](🌅)
+### Tema Sunset 🌅
+![Sunset Theme](/static/sunset.png)
 
 ---
 
