@@ -112,7 +112,7 @@ Apri il browser su: http://127.0.0.1:5000
 
 ## 🌐 Demo Online
 
-🔗 **[Prova DocDigest Live](https://docdigest.vercel.app)**
+🔗 **[Prova DocDigest Live](https://docdigest-zeta.vercel.app/)**
 
 > ⚠️ **Nota**: La versione demo è limitata a 5 riassunti/giorno per utente.
 
