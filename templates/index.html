@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocDigest - AI Document Summarization</title>
+    <link rel="icon" type="image/png" href="/static/logo.png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        /* Corporate Minimal (Default) */
+        --primary: #2563eb;
+        --primary-dark: #1e40af;
+        --accent: #10b981;
+        --bg-main: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --bg-card: #ffffff;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border: #e5e7eb;
+      }
+
+      [data-theme="dark"] {
+        /* Dark Modern */
+        --primary: #8b5cf6;
+        --primary-dark: #6366f1;
+        --accent: #ec4899;
+        --bg-main: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        --bg-card: #374151;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --border: #4b5563;
+      }
+
+      [data-theme="sunset"] {
+        /* Sunset Gradient */
+        --primary: #f97316;
+        --primary-dark: #ea580c;
+        --accent: #fbbf24;
+        --bg-main: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+        --bg-card: #ffffff;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border: #fed7aa;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: var(--bg-main);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .header-controls {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        gap: 15px;
+        z-index: 1000;
+      }
+
+      .theme-switcher,
+      .lang-switcher {
+        background: var(--bg-card);
+        padding: 10px 15px;
+        border-radius: 12px;
+        display: flex;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .theme-btn,
+      .lang-btn {
+        background: transparent;
+        border: 2px solid var(--border);
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        color: var(--text-primary);
+      }
+
+      .theme-btn.active,
+      .lang-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .container {
+        background: var(--bg-card);
+        border-radius: 24px;
+        padding: 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        max-width: 900px;
+        width: 100%;
+        animation: fadeInUp 0.6s ease;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .logo-icon {
+        width: 100px;
+        height: 100px;
+        background: white;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+        padding: 15px;
+      }
+
+      .logo-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      h1 {
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        text-align: center;
+        font-size: 32px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 40px;
+        font-size: 16px;
+      }
+
+      .upload-area {
+        border: 3px dashed var(--border);
+        border-radius: 16px;
+        padding: 50px;
+        text-align: center;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        background: rgba(37, 99, 235, 0.02);
+      }
+
+      .upload-area:hover {
+        border-color: var(--primary);
+        background: rgba(37, 99, 235, 0.05);
+        transform: translateY(-2px);
+      }
+
+      .upload-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+        color: var(--primary);
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .upload-btn {
+        background: var(--primary);
+        color: white;
+        padding: 14px 35px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .upload-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      }
+
+      .controls {
+        margin-bottom: 25px;
+      }
+
+      .control-group {
+        margin-bottom: 15px;
+      }
+
+      .control-label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 14px;
+        text-align: left;
+      }
+
+      select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: 2px solid var(--border);
+        font-size: 14px;
+        cursor: pointer;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .file-info {
+        margin: 20px 0 0 0;
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 12px;
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 8px;
+        display: none;
+      }
+
+      .file-info.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          max-height: 0;
+        }
+        to {
+          opacity: 1;
+          max-height: 100px;
+        }
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .spinner {
+        border: 4px solid var(--border);
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .result {
+        display: none;
+        margin-top: 40px;
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .result-box {
+        background: linear-gradient(
+          135deg,
+          rgba(37, 99, 235, 0.05),
+          rgba(16, 185, 129, 0.05)
+        );
+        border-left: 4px solid var(--primary);
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+      }
+
+      .result-title {
+        color: var(--primary);
+        font-weight: 700;
+        margin-bottom: 15px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .result-text {
+        color: var(--text-primary);
+        line-height: 1.8;
+        font-size: 15px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 25px 0;
+      }
+
+      .stat-item {
+        text-align: center;
+        padding: 20px;
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        transition: all 0.3s ease;
+      }
+
+      .stat-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-number {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--primary);
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .translate-section {
+        margin: 25px 0;
+        padding: 20px;
+        background: rgba(139, 92, 246, 0.05);
+        border-radius: 12px;
+        border: 2px dashed var(--accent);
+      }
+
+      .translate-title {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .translate-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .translate-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border);
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      .translate-btn:hover {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 25px;
+        flex-wrap: wrap;
+      }
+
+      .action-btn {
+        background: var(--primary);
+        color: white;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+      }
+
+      .action-btn.secondary {
+        background: var(--accent);
+      }
+
+      .error {
+        background: #fee2e2;
+        border-left: 4px solid #ef4444;
+        padding: 15px;
+        border-radius: 8px;
+        color: #991b1b;
+        display: none;
+        margin-top: 15px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 30px 20px;
+        }
+
+        .header-controls {
+          flex-direction: column;
+          top: 10px;
+          right: 10px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .upload-area {
+          padding: 30px 20px;
+        }
+      }
+
+      /* Modal Rate Limit */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+      }
+
+      .modal-content {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-icon {
+        font-size: 60px;
+        margin-bottom: 20px;
+      }
+
+      .modal-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 15px;
+      }
+
+      .modal-text {
+        font-size: 15px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 25px;
+      }
+
+      .modal-close-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .modal-close-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body data-theme="corporate">
+    <!-- Header Controls -->
+    <div class="header-controls">
+      <div class="theme-switcher">
+        <button
+          class="theme-btn active"
+          data-theme="corporate"
+          title="Corporate"
+        >
+          💼
+        </button>
+        <button class="theme-btn" data-theme="dark" title="Dark">🌙</button>
+        <button class="theme-btn" data-theme="sunset" title="Sunset">🌅</button>
+      </div>
+
+      <div class="lang-switcher">
+        <button class="lang-btn active" data-lang="it">🇮🇹 IT</button>
+        <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Logo -->
+      <div class="logo">
+        <div class="logo-icon">
+          <img src="/static/logo.png" alt="DocDigest Logo" />
+        </div>
+        <h1>DocDigest</h1>
+        <p class="subtitle" data-i18n="subtitle">
+          Riassunti intelligenti basati su AI
+        </p>
+      </div>
+
+      <!-- Portfolio Banner -->
+      <div
+        style="
+          background: linear-gradient(
+            135deg,
+            rgba(37, 99, 235, 0.1),
+            rgba(16, 185, 129, 0.1)
+          );
+          padding: 15px 20px;
+          border-radius: 12px;
+          text-align: center;
+          margin-bottom: 30px;
+          border: 2px solid var(--primary);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+          "
+        >
+          <span style="font-size: 20px">🎓</span>
+          <strong
+            style="color: var(--primary); font-size: 15px"
+            data-i18n="banner-title"
+            >Progetto Portfolio Demo</strong
+          >
+          <span style="color: var(--text-secondary); font-size: 13px">•</span>
+          <small
+            style="color: var(--text-secondary); font-size: 13px"
+            data-i18n="banner-limits"
+          >
+            Limite: 3 richieste/ora • 10 richieste/giorno
+          </small>
+        </div>
+      </div>
+
+      <!-- Upload Area -->
+      <div class="upload-area">
+        <div class="upload-icon">
+          <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <p
+          style="
+            margin-bottom: 25px;
+            color: var(--text-secondary);
+            font-size: 15px;
+          "
+          data-i18n="upload-text"
+        >
+          Clicca per selezionare un file .txt, .pdf o .docx
+        </p>
+
+        <!-- Controls -->
+        <div class="controls">
+          <div class="control-group">
+            <label class="control-label" data-i18n="length-label"
+              >Lunghezza Riassunto:</label
+            >
+            <select id="summaryLengthSelector">
+              <option value="50" data-i18n="length-short">
+                📝 Breve (~50 parole)
+              </option>
+              <option value="150" selected data-i18n="length-medium">
+                📄 Medio (~150 parole)
+              </option>
+              <option value="300" data-i18n="length-long">
+                📚 Lungo (~300 parole)
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <label for="fileInput" class="upload-btn">
+          <i class="fas fa-folder-open"></i>
+          <span data-i18n="choose-file">Scegli File</span>
+        </label>
+        <input type="file" id="fileInput" accept=".txt,.pdf,.docx" />
+        <p class="file-info" id="fileInfo"></p>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p
+          style="color: var(--text-primary); font-weight: 600"
+          data-i18n="loading"
+        >
+          Generazione riassunto in corso...
+        </p>
+      </div>
+
+      <!-- Error -->
+      <div class="error" id="error"></div>
+
+      <!-- Result -->
+      <div class="result" id="result">
+        <div class="result-box">
+          <div class="result-title">
+            <i class="fas fa-sparkles"></i>
+            <span data-i18n="result-title">Riassunto Generato:</span>
+          </div>
+          <p class="result-text" id="summaryText"></p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat-item">
+            <span class="stat-number" id="originalLength">0</span>
+            <span class="stat-label" data-i18n="stat-original"
+              >Parole Originali</span
+            >
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="summaryLength">0</span>
+            <span class="stat-label" data-i18n="stat-summary"
+              >Parole Riassunto</span
+            >
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="reduction">0%</span>
+            <span class="stat-label" data-i18n="stat-reduction">Riduzione</span>
+          </div>
+        </div>
+
+        <!-- Personalizzazione Esportazione -->
+        <div
+          style="
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(37, 99, 235, 0.05);
+            border-radius: 12px;
+            border: 2px solid var(--border);
+          "
+        >
+          <div
+            style="
+              color: var(--text-primary);
+              font-weight: 600;
+              margin-bottom: 15px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            "
+          >
+            <i class="fas fa-pen"></i>
+            <span data-i18n="export-settings">Impostazioni Esportazione:</span>
+          </div>
+          <div class="control-group">
+            <label class="control-label" data-i18n="custom-title-label"
+              >Titolo Documento (opzionale):</label
+            >
+            <input
+              type="text"
+              id="customTitle"
+              placeholder="Es: Report Trimestrale Q4 2024"
+              style="
+                width: 100%;
+                padding: 12px;
+                border-radius: 10px;
+                border: 2px solid var(--border);
+                font-size: 14px;
+                background: var(--bg-card);
+                color: var(--text-primary);
+              "
+            />
+          </div>
+        </div>
+
+        <!-- Translation Section -->
+        <div class="translate-section">
+          <div class="translate-title">
+            <i class="fas fa-language"></i>
+            <span data-i18n="translate-title">Traduci in:</span>
+          </div>
+          <div class="translate-buttons">
+            <button class="translate-btn" data-lang="en">🇬🇧 English</button>
+            <button class="translate-btn" data-lang="it">🇮🇹 Italiano</button>
+            <button class="translate-btn" data-lang="es">🇪🇸 Español</button>
+            <button class="translate-btn" data-lang="fr">🇫🇷 Français</button>
+            <button class="translate-btn" data-lang="de">🇩🇪 Deutsch</button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button id="downloadTxt" class="action-btn">
+            <i class="fas fa-download"></i>
+            <span data-i18n="download-txt">Scarica TXT</span>
+          </button>
+          <button id="downloadPdf" class="action-btn secondary">
+            <i class="fas fa-file-pdf"></i>
+            <span data-i18n="download-pdf">Scarica PDF</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Rate Limit Modal -->
+    <div class="modal-overlay" id="rateLimitModal">
+      <div class="modal-content">
+        <div class="modal-icon">⏳</div>
+        <h2 class="modal-title" data-i18n="modal-limit-title">
+          Limite Giornaliero Raggiunto
+        </h2>
+        <p class="modal-text" data-i18n="modal-limit-text">
+          Hai raggiunto il limite di <strong>10 riassunti al giorno</strong> per
+          questa demo portfolio.<br /><br />
+          Torna domani per continuare a testare DocDigest!
+        </p>
+        <button
+          class="modal-close-btn"
+          onclick="closeRateLimitModal()"
+          data-i18n="modal-close-btn"
+        >
+          Ho Capito
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Modal Rate Limit
+      function showRateLimitModal() {
+        document.getElementById("rateLimitModal").classList.add("show");
+      }
+
+      function closeRateLimitModal() {
+        document.getElementById("rateLimitModal").classList.remove("show");
+      }
+
+      // Chiudi modal cliccando fuori
+      document
+        .getElementById("rateLimitModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeRateLimitModal();
+          }
+        });
+
+      // Translations
+      const translations = {
+        it: {
+          subtitle: "Riassunti intelligenti basati su AI",
+          "upload-text": "Clicca per selezionare un file .txt, .pdf o .docx",
+          "length-label": "Lunghezza Riassunto:",
+          "length-short": "📝 Breve (~50 parole)",
+          "length-medium": "📄 Medio (~150 parole)",
+          "length-long": "📚 Lungo (~300 parole)",
+          "choose-file": "Scegli File",
+          loading: "Generazione riassunto in corso...",
+          "result-title": "Riassunto Generato:",
+          "stat-original": "Parole Originali",
+          "stat-summary": "Parole Riassunto",
+          "stat-reduction": "Riduzione",
+          "export-settings": "Impostazioni Esportazione:",
+          "custom-title-label": "Titolo Documento (opzionale):",
+          "translate-title": "Traduci in:",
+          "download-txt": "Scarica TXT",
+          "download-pdf": "Scarica PDF",
+          "banner-title": "Progetto Portfolio Demo",
+          "banner-limits": "Limite: 3 richieste/ora • 5 richieste/giorno",
+          "modal-limit-title": "Limite Giornaliero Raggiunto",
+          "modal-limit-text":
+            "Hai raggiunto il limite di <strong>5 riassunti al giorno</strong> per questa demo portfolio.<br><br>Torna domani per continuare a testare DocDigest!",
+          "modal-close-btn": "Ho Capito",
+        },
+        en: {
+          subtitle: "AI-powered document summarization",
+          "upload-text": "Click to select a .txt, .pdf or .docx file",
+          "length-label": "Summary Length:",
+          "length-short": "📝 Short (~50 words)",
+          "length-medium": "📄 Medium (~150 words)",
+          "length-long": "📚 Long (~300 words)",
+          "choose-file": "Choose File",
+          loading: "Generating summary...",
+          "result-title": "Generated Summary:",
+          "stat-original": "Original Words",
+          "stat-summary": "Summary Words",
+          "stat-reduction": "Reduction",
+          "export-settings": "Export Settings:",
+          "custom-title-label": "Document Title (optional):",
+          "translate-title": "Translate to:",
+          "download-txt": "Download TXT",
+          "download-pdf": "Download PDF",
+          "banner-title": "Portfolio Demo Project",
+          "banner-limits": "Rate limited: 3 requests/hour • 5 requests/day",
+          "modal-limit-title": "Daily Limit Reached",
+          "modal-limit-text":
+            "You've reached the limit of <strong>5 summaries per day</strong> for this portfolio demo.<br><br>Come back tomorrow to continue testing DocDigest!",
+          "modal-close-btn": "Got It",
+        },
+      };
+
+      let currentLanguage = "it";
+
+      // Theme Switcher
+      document.querySelectorAll(".theme-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const theme = this.dataset.theme;
+          document.body.setAttribute("data-theme", theme);
+
+          document
+            .querySelectorAll(".theme-btn")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+        });
+      });
+
+      // Language Switcher
+      document.querySelectorAll(".lang-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          currentLanguage = this.dataset.lang;
+
+          document
+            .querySelectorAll(".lang-btn")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+
+          updateLanguage();
+        });
+      });
+
+      function updateLanguage() {
+        document.querySelectorAll("[data-i18n]").forEach((elem) => {
+          const key = elem.getAttribute("data-i18n");
+          if (translations[currentLanguage][key]) {
+            elem.textContent = translations[currentLanguage][key];
+          }
+        });
+      }
+
+      // File Upload
+      const fileInput = document.getElementById("fileInput");
+      const fileInfo = document.getElementById("fileInfo");
+      const loading = document.getElementById("loading");
+      const result = document.getElementById("result");
+      const error = document.getElementById("error");
+
+      fileInput.addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        if (file) {
+          fileInfo.textContent = `📎 ${file.name}`;
+          fileInfo.classList.add("show");
+          uploadFile(file);
+        }
+      });
+
+      async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "length",
+          document.getElementById("summaryLengthSelector").value,
+        );
+        formData.append("ui_language", currentLanguage);
+
+        result.style.display = "none";
+        error.style.display = "none";
+        loading.style.display = "block";
+
+        try {
+          const response = await fetch("/summarize", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          loading.style.display = "none";
+
+          if (response.status === 429) {
+            // Rate limit raggiunto
+            showRateLimitModal();
+            return;
+          }
+
+          if (response.ok) {
+            document.getElementById("summaryText").textContent = data.summary;
+            document.getElementById("originalLength").textContent =
+              data.original_length;
+            document.getElementById("summaryLength").textContent =
+              data.summary_length;
+
+            const reduction = Math.round(
+              (1 - data.summary_length / data.original_length) * 100,
+            );
+            document.getElementById("reduction").textContent = reduction + "%";
+
+            result.style.display = "block";
+          } else {
+            error.textContent = data.error || "Unknown error";
+            error.style.display = "block";
+          }
+        } catch (err) {
+          loading.style.display = "none";
+          error.textContent = "Connection error. Please try again.";
+          error.style.display = "block";
+        }
+      }
+
+      // Translation
+      document.querySelectorAll(".translate-btn").forEach((btn) => {
+        btn.addEventListener("click", async function () {
+          const targetLang = this.dataset.lang;
+          const summaryText =
+            document.getElementById("summaryText").textContent;
+
+          loading.style.display = "block";
+
+          try {
+            const response = await fetch("/translate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                text: summaryText,
+                target_language: targetLang,
+              }),
+            });
+
+            loading.style.display = "none";
+
+            if (response.status === 429) {
+              showRateLimitModal();
+              return;
+            }
+
+            const data = await response.json();
+
+            if (response.ok) {
+              document.getElementById("summaryText").textContent =
+                data.translated_text;
+            }
+          } catch (err) {
+            loading.style.display = "none";
+            console.error("Translation error:", err);
+          }
+        });
+      });
+
+      // Download TXT
+      document
+        .getElementById("downloadTxt")
+        .addEventListener("click", function () {
+          const summary = document.getElementById("summaryText").textContent;
+          const customTitle = document
+            .getElementById("customTitle")
+            .value.trim();
+
+          let content = "";
+
+          // Aggiungi titolo personalizzato se presente
+          if (customTitle) {
+            content += customTitle + "\n";
+            content += "=".repeat(customTitle.length) + "\n\n";
+          }
+
+          // Aggiungi riassunto
+          content += summary + "\n\n";
+
+          // Aggiungi firma
+          content += "---\n";
+          content += "Riassunto generato con DocDigest\n";
+          content += "Powered by AI";
+
+          const blob = new Blob([content], {
+            type: "text/plain; charset=utf-8",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "docdigest_summary.txt";
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+
+      // Download PDF
+      document
+        .getElementById("downloadPdf")
+        .addEventListener("click", async function () {
+          const summary = document.getElementById("summaryText").textContent;
+          const customTitle = document
+            .getElementById("customTitle")
+            .value.trim();
+
+          const response = await fetch("/download-pdf", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              summary: summary,
+              custom_title: customTitle,
+            }),
+          });
+
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "docdigest_summary.pdf";
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+    </script>
+  </body>
+</html>

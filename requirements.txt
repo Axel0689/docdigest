@@ -1,0 +1,7 @@
+flask
+python-dotenv
+google-genai
+PyPDF2
+python-docx
+reportlab
+flask-limiter
