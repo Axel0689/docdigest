@@ -121,13 +121,13 @@ Apri il browser su: http://127.0.0.1:5000
 ## 📸 Screenshots
 
 ### Tema Corporate (Default)
-![Corporate Theme](docs/screenshot_corporate.png)
+![Corporate Theme](💼)
 
 ### Tema Dark
-![Dark Theme](docs/screenshot_dark.png)
+![Dark Theme](🌙)
 
 ### Tema Sunset
-![Sunset Theme](docs/screenshot_sunset.png)
+![Sunset Theme](🌅)
 
 ---
 
