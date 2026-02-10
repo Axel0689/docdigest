@@ -12,6 +12,8 @@ from reportlab.lib.units import inch
 from io import BytesIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import tempfile
+
 
 # Carica variabili d'ambiente
 load_dotenv()
@@ -28,7 +30,7 @@ limiter = Limiter(
 )
 
 # Configurazione
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
