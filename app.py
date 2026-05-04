@@ -13,6 +13,7 @@ from io import BytesIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import tempfile
+import time
 
 
 # Carica variabili d'ambiente
@@ -39,6 +40,21 @@ print("Configurazione Google Gemini API...")
 # Usa la key dedicata a DocDigest
 api_key = os.getenv('DOCDIGEST_GEMINI_KEY') or os.getenv('GEMINI_API_KEY')
 client = genai.Client(api_key=api_key)
+
+def _gemini_generate(prompt, retries=3):
+    for attempt in range(retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            return response.text.strip()
+        except Exception as e:
+            is_transient = '503' in str(e) or 'UNAVAILABLE' in str(e)
+            if is_transient and attempt < retries - 1:
+                time.sleep(2 ** attempt)  # 1s, 2s
+                continue
+            raise
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -115,11 +131,7 @@ TESTO DA RIASSUMERE:
 RIASSUNTO:"""
 
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt
-        )
-        return response.text.strip()
+        return _gemini_generate(prompt)
     except Exception as e:
         return f"Errore nella generazione: {str(e)}"
 
@@ -146,11 +158,7 @@ TESTO DA TRADURRE:
 TRADUZIONE:"""
     
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt
-        )
-        return response.text.strip()
+        return _gemini_generate(prompt)
     except Exception as e:
         return f"Errore nella traduzione: {str(e)}"
     
