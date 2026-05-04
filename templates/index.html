@@ -342,6 +342,32 @@
         font-size: 15px;
       }
 
+      .summary-bullet-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .summary-bullet-item {
+        padding: 8px 0 8px 25px;
+        position: relative;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border);
+        line-height: 1.6;
+      }
+
+      .summary-bullet-item:last-child {
+        border-bottom: none;
+      }
+
+      .summary-bullet-item::before {
+        content: "▸";
+        position: absolute;
+        left: 0;
+        color: var(--primary);
+        font-weight: bold;
+      }
+
       .stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -670,6 +696,19 @@
               </option>
             </select>
           </div>
+          <div class="control-group">
+            <label class="control-label" data-i18n="format-label"
+              >Formato Riassunto:</label
+            >
+            <select id="summaryFormatSelector">
+              <option value="paragraph" selected data-i18n="format-paragraph">
+                📃 Paragrafo
+              </option>
+              <option value="bullet" data-i18n="format-bullet">
+                📋 Punti Chiave
+              </option>
+            </select>
+          </div>
         </div>
 
         <label for="fileInput" class="upload-btn">
@@ -855,6 +894,9 @@
           "export-settings": "Impostazioni Esportazione:",
           "custom-title-label": "Titolo Documento (opzionale):",
           "translate-title": "Traduci in:",
+          "format-label": "Formato Riassunto:",
+          "format-paragraph": "📃 Paragrafo",
+          "format-bullet": "📋 Punti Chiave",
           "download-txt": "Scarica TXT",
           "download-pdf": "Scarica PDF",
           "banner-title": "Progetto Portfolio Demo",
@@ -880,6 +922,9 @@
           "export-settings": "Export Settings:",
           "custom-title-label": "Document Title (optional):",
           "translate-title": "Translate to:",
+          "format-label": "Summary Format:",
+          "format-paragraph": "📃 Paragraph",
+          "format-bullet": "📋 Key Points",
           "download-txt": "Download TXT",
           "download-pdf": "Download PDF",
           "banner-title": "Portfolio Demo Project",
@@ -892,6 +937,33 @@
       };
 
       let currentLanguage = "it";
+      let currentSummaryRaw = "";
+      let currentSummaryFormat = "paragraph";
+
+      function renderSummary(rawText, format) {
+        currentSummaryRaw = rawText;
+        currentSummaryFormat = format;
+        const summaryTextEl = document.getElementById("summaryText");
+        summaryTextEl.innerHTML = "";
+        if (format === "bullet") {
+          const lines = rawText
+            .split("\n")
+            .filter((line) => line.trim().length > 0)
+            .map((line) => line.replace(/^[-•*▸]\s*/, "").trim())
+            .filter((line) => line.length > 0);
+          const ul = document.createElement("ul");
+          ul.className = "summary-bullet-list";
+          lines.forEach((line) => {
+            const li = document.createElement("li");
+            li.className = "summary-bullet-item";
+            li.textContent = line;
+            ul.appendChild(li);
+          });
+          summaryTextEl.appendChild(ul);
+        } else {
+          summaryTextEl.textContent = rawText;
+        }
+      }
 
       // Theme Switcher
       document.querySelectorAll(".theme-btn").forEach((btn) => {
@@ -953,6 +1025,10 @@
           document.getElementById("summaryLengthSelector").value,
         );
         formData.append("ui_language", currentLanguage);
+        formData.append(
+          "format",
+          document.getElementById("summaryFormatSelector").value,
+        );
 
         result.style.display = "none";
         error.style.display = "none";
@@ -974,7 +1050,7 @@
           }
 
           if (response.ok) {
-            document.getElementById("summaryText").textContent = data.summary;
+            renderSummary(data.summary, data.format || "paragraph");
             document.getElementById("originalLength").textContent =
               data.original_length;
             document.getElementById("summaryLength").textContent =
@@ -1001,8 +1077,6 @@
       document.querySelectorAll(".translate-btn").forEach((btn) => {
         btn.addEventListener("click", async function () {
           const targetLang = this.dataset.lang;
-          const summaryText =
-            document.getElementById("summaryText").textContent;
 
           loading.style.display = "block";
 
@@ -1013,7 +1087,7 @@
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                text: summaryText,
+                text: currentSummaryRaw,
                 target_language: targetLang,
               }),
             });
@@ -1028,8 +1102,7 @@
             const data = await response.json();
 
             if (response.ok) {
-              document.getElementById("summaryText").textContent =
-                data.translated_text;
+              renderSummary(data.translated_text, currentSummaryFormat);
             }
           } catch (err) {
             loading.style.display = "none";
@@ -1042,7 +1115,6 @@
       document
         .getElementById("downloadTxt")
         .addEventListener("click", function () {
-          const summary = document.getElementById("summaryText").textContent;
           const customTitle = document
             .getElementById("customTitle")
             .value.trim();
@@ -1056,7 +1128,16 @@
           }
 
           // Aggiungi riassunto
-          content += summary + "\n\n";
+          if (currentSummaryFormat === "bullet") {
+            const lines = currentSummaryRaw
+              .split("\n")
+              .filter((line) => line.trim().length > 0)
+              .map((line) => line.replace(/^[-•*▸]\s*/, "").trim())
+              .filter((line) => line.length > 0);
+            content += lines.map((line) => "• " + line).join("\n") + "\n\n";
+          } else {
+            content += currentSummaryRaw + "\n\n";
+          }
 
           // Aggiungi firma
           content += "---\n";
@@ -1078,7 +1159,6 @@
       document
         .getElementById("downloadPdf")
         .addEventListener("click", async function () {
-          const summary = document.getElementById("summaryText").textContent;
           const customTitle = document
             .getElementById("customTitle")
             .value.trim();
@@ -1089,8 +1169,9 @@
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              summary: summary,
+              summary: currentSummaryRaw,
               custom_title: customTitle,
+              format: currentSummaryFormat,
             }),
           });
 

@@ -83,16 +83,28 @@ def read_file(filepath):
     else:
         return "Formato file non supportato"
 
-def generate_summary(text, max_words=150, language="auto"):
+def generate_summary(text, max_words=150, language="auto", summary_format="paragraph"):
     """Genera riassunto usando Gemini"""
-    
+
     lang_instruction = ""
     if language == "it":
         lang_instruction = "Rispondi in italiano."
     elif language == "en":
         lang_instruction = "Respond in English."
-    
-    prompt = f"""{lang_instruction}
+
+    if summary_format == "bullet":
+        prompt = f"""{lang_instruction}
+Estrai i concetti chiave dal seguente testo come lista di punti chiave.
+Genera tra 5 e 10 punti chiave. Ogni punto deve essere conciso (massimo 20 parole).
+Non aggiungere introduzioni o conclusioni, fornisci solo la lista di punti chiave.
+Usa il formato: - punto chiave
+
+TESTO:
+{text}
+
+PUNTI CHIAVE:"""
+    else:
+        prompt = f"""{lang_instruction}
 Riassumi il seguente testo in modo chiaro e conciso in circa {max_words} parole.
 Mantieni i punti chiave e le informazioni più importanti.
 Non aggiungere commenti o introduzioni, fornisci solo il riassunto.
@@ -101,7 +113,7 @@ TESTO DA RIASSUMERE:
 {text}
 
 RIASSUNTO:"""
-    
+
     try:
         response = client.models.generate_content(
             model='gemini-2.5-flash',
@@ -167,6 +179,9 @@ def summarize():
         # Ottieni parametri
         max_words = int(request.form.get('length', 150))
         ui_language = request.form.get('ui_language', 'it')
+        summary_format = request.form.get('format', 'paragraph')
+        if summary_format not in ('paragraph', 'bullet'):
+            summary_format = 'paragraph'
         
         print(f"DEBUG: Lunghezza richiesta = {max_words}")
         print(f"DEBUG: File caricato = {filename}")
@@ -183,7 +198,7 @@ def summarize():
         print(f"DEBUG: Testo estratto - {original_word_count} parole")
         
         # Genera riassunto nella lingua dell'UI
-        summary = generate_summary(text, max_words=max_words, language=ui_language)
+        summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
         
         actual_summary_word_count = len(summary.split())
         
@@ -196,7 +211,8 @@ def summarize():
         result = {
             'original_length': original_word_count,
             'summary': summary,
-            'summary_length': actual_summary_word_count
+            'summary_length': actual_summary_word_count,
+            'format': summary_format
         }
         
         return jsonify(result)
@@ -231,6 +247,7 @@ def download_pdf():
     data = request.get_json()
     summary = data.get('summary', '')
     custom_title = data.get('custom_title', '').strip()
+    summary_format = data.get('format', 'paragraph')
     
     # Crea PDF in memoria
     buffer = BytesIO()
@@ -294,7 +311,15 @@ def download_pdf():
     story.append(Spacer(1, 0.3*inch))
     
     # Aggiungi riassunto
-    body = Paragraph(summary.replace('\n', '<br/>'), body_style)
+    if summary_format == 'bullet':
+        from reportlab.platypus import ListFlowable, ListItem
+        import re
+        lines = [re.sub(r'^[-•*▸]\s*', '', line).strip()
+                 for line in summary.split('\n') if line.strip()]
+        bullet_items = [ListItem(Paragraph(line, body_style)) for line in lines if line]
+        body = ListFlowable(bullet_items, bulletType='bullet', start='•', leftIndent=20)
+    else:
+        body = Paragraph(summary.replace('\n', '<br/>'), body_style)
     story.append(body)
     
     # Aggiungi spazio prima della firma
