@@ -22,10 +22,11 @@
 - 📄 **Multi-Formato**: Supporta file TXT, PDF e DOCX
 - 🧠 **AI Avanzata**: Powered by Google Gemini 2.5 Flash
 - 📏 **Lunghezza Personalizzabile**: Breve (~50 parole), Medio (~150), Lungo (~300)
+- 📋 **Formato Riassunto**: Prosa (paragrafo) oppure Punti Chiave (5-10 bullet)
 - 🌍 **Multi-Lingua UI**: Interfaccia in Italiano e Inglese
 - 🔄 **Traduzione Automatica**: Traduci il riassunto in 5 lingue (IT, EN, ES, FR, DE)
 - 📊 **Statistiche Real-Time**: Parole originali, riassunto e percentuale di riduzione
-- 📥 **Export**: Scarica il riassunto in formato TXT o PDF
+- 📥 **Export**: Scarica il riassunto in formato TXT o PDF (bullet inclusi)
 - 🎨 **3 Temi**: Corporate (blu), Dark (viola), Sunset (arancione)
 - 🔐 **Rate Limiting**: 5 riassunti/giorno per utente (demo portfolio)
 
@@ -144,7 +145,7 @@ Apri il browser su: http://127.0.0.1:5000
 | Endpoint | Limite Giornaliero | Limite Orario |
 |----------|-------------------|---------------|
 | `/summarize` | 5 richieste/giorno | 3 richieste/ora |
-| `/translate` | 5 richieste/giorno | 3 richieste/ora |
+| `/translate` | 15 richieste/giorno | 5 richieste/ora |
 
 ---
 
@@ -153,7 +154,7 @@ Apri il browser su: http://127.0.0.1:5000
 - [ ] 🔗 URL Sharing (condivisione riassunti via link)
 - [ ] 🌐 Riassunto da URL web
 - [ ] 📧 Condivisione via Email
-- [ ] ⚡ Bullet Points Summary
+- [x] ⚡ Bullet Points Summary
 - [ ] 💾 Storico Riassunti (con autenticazione)
 - [ ] 📱 Progressive Web App (PWA)
 - [ ] 🔌 REST API pubblica
