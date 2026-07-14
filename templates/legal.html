@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocDigest - Privacy &amp; Termini</title>
+    <link rel="icon" type="image/png" href="/static/logo.png" />
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1e40af;
+        --bg-main: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --bg-card: #ffffff;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border: #e5e7eb;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg-main);
+        min-height: 100vh;
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+      }
+      .container {
+        background: var(--bg-card);
+        border-radius: 24px;
+        padding: 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        max-width: 800px;
+        width: 100%;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 25px;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .back-link:hover { text-decoration: underline; }
+      h1 {
+        color: var(--text-primary);
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      .updated {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-bottom: 35px;
+      }
+      h2 {
+        color: var(--primary);
+        font-size: 19px;
+        margin-top: 35px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--border);
+      }
+      h3 {
+        color: var(--text-primary);
+        font-size: 15px;
+        margin-top: 20px;
+        margin-bottom: 8px;
+      }
+      p, li {
+        color: var(--text-primary);
+        font-size: 14.5px;
+        line-height: 1.7;
+        margin-bottom: 10px;
+      }
+      ul { padding-left: 22px; margin-bottom: 12px; }
+      .note {
+        background: rgba(37, 99, 235, 0.06);
+        border-left: 4px solid var(--primary);
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        color: var(--text-secondary);
+        margin: 20px 0;
+      }
+      .contact-box {
+        background: rgba(16, 185, 129, 0.06);
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-top: 15px;
+      }
+      .contact-box p { margin-bottom: 4px; }
+      @media (max-width: 600px) {
+        .container { padding: 30px 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a href="/" class="back-link">&larr; Torna a DocDigest</a>
+      <h1>Privacy &amp; Termini di Utilizzo</h1>
+      <p class="updated">Ultimo aggiornamento: 14 luglio 2026</p>
+
+      <div class="note">
+        DocDigest è un <strong>progetto demo/portfolio</strong>, non un servizio commerciale.
+        Questa pagina spiega in modo semplice come vengono trattati i dati e a quali condizioni
+        puoi usare il servizio.
+      </div>
+
+      <h2>Privacy Policy</h2>
+
+      <h3>Titolare del trattamento</h3>
+      <div class="contact-box">
+        <p><strong>Alessandro Bagnuoli</strong></p>
+        <p>Email: bagnuoli.alex@ik.me</p>
+      </div>
+
+      <h3>Quali dati vengono trattati</h3>
+      <ul>
+        <li><strong>File caricati</strong> (.txt, .pdf, .docx) e il testo in essi contenuto, necessari per generare il riassunto.</li>
+        <li><strong>Indirizzo IP</strong>, usato esclusivamente per applicare i limiti di richieste (rate limiting) e prevenire abusi.</li>
+        <li>Non vengono creati account, non vengono usati cookie di profilazione e non viene raccolto alcun altro dato personale.</li>
+      </ul>
+
+      <h3>Come vengono trattati i file caricati</h3>
+      <ul>
+        <li>Il file viene salvato temporaneamente sul server solo per il tempo necessario a estrarne il testo.</li>
+        <li>Il testo estratto viene inviato all'API <strong>Google Gemini</strong> (Google Ireland Ltd., in qualità di sub-responsabile del trattamento) per generare il riassunto/la traduzione.</li>
+        <li>Il file temporaneo viene <strong>eliminato immediatamente</strong> dal server al termine dell'elaborazione (o in caso di errore).</li>
+        <li>Il contenuto del documento e i riassunti generati <strong>non vengono salvati</strong> in alcun database né conservati dopo la risposta all'utente.</li>
+        <li>Il conteggio delle richieste per IP (rate limiting) è mantenuto solo in memoria e non è persistente.</li>
+      </ul>
+
+      <h3>Base giuridica e finalità</h3>
+      <p>Il trattamento avviene sulla base del legittimo interesse a fornire il servizio richiesto dall'utente (art. 6.1.f GDPR) e per la sicurezza del sistema (prevenzione abusi tramite rate limiting).</p>
+
+      <h3>Raccomandazione</h3>
+      <p>Non caricare documenti contenenti dati sensibili, riservati o di terzi senza il loro consenso. Pur non conservando i file, essi transitano su infrastrutture di terze parti (Google Gemini) per l'elaborazione.</p>
+
+      <h3>I tuoi diritti</h3>
+      <p>Poiché non conserviamo dati personali dopo l'elaborazione, la maggior parte dei diritti GDPR (accesso, cancellazione, rettifica) non è di fatto esercitabile su dati che non esistono più lato server. Per qualsiasi domanda o segnalazione, scrivi a bagnuoli.alex@ik.me.</p>
+
+      <h2>Termini di Utilizzo / Disclaimer</h2>
+
+      <h3>Natura del servizio</h3>
+      <p>DocDigest è un progetto dimostrativo realizzato a scopo di portfolio. Viene fornito <strong>"così com'è"</strong>, senza garanzie di disponibilità, continuità del servizio o accuratezza dei risultati.</p>
+
+      <h3>Contenuti generati dall'AI</h3>
+      <p>I riassunti e le traduzioni sono generati automaticamente tramite intelligenza artificiale (Google Gemini) e possono contenere <strong>imprecisioni, omissioni o errori</strong>. Non utilizzare i risultati per decisioni legali, mediche, finanziarie o comunque critiche senza verifica umana.</p>
+
+      <h3>Limiti d'uso</h3>
+      <ul>
+        <li>Il servizio è soggetto a limiti di richieste per IP (rate limiting), mostrati nell'interfaccia.</li>
+        <li>È vietato l'uso per caricare contenuti illeciti, dati sensibili di terzi senza consenso, o tentativi di compromettere la sicurezza del sistema.</li>
+      </ul>
+
+      <h3>Limitazione di responsabilità</h3>
+      <p>Nei limiti consentiti dalla legge, il titolare non è responsabile per danni diretti o indiretti derivanti dall'uso o dall'impossibilità di utilizzo del servizio, né per l'accuratezza dei contenuti generati dall'AI.</p>
+
+      <h3>Modifiche</h3>
+      <p>Questi termini possono essere aggiornati senza preavviso, trattandosi di un progetto in evoluzione continua.</p>
+
+      <h3>Contatti</h3>
+      <div class="contact-box">
+        <p><strong>Alessandro Bagnuoli</strong></p>
+        <p>Email: bagnuoli.alex@ik.me</p>
+      </div>
+    </div>
+  </body>
+</html>

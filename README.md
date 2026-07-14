@@ -57,7 +57,8 @@ docdigest/
 ├── static/
 │   └── logo.png          # Logo applicazione
 ├── templates/
-│   └── index.html        # Frontend completo
+│   ├── index.html        # Frontend completo
+│   └── legal.html        # Privacy Policy & Termini di Utilizzo
 ├── uploads/              # Cartella temporanea file
 ├── app.py                # Backend Flask
 ├── requirements.txt      # Dipendenze Python
@@ -146,6 +147,20 @@ Apri il browser su: http://127.0.0.1:5000
 |----------|-------------------|---------------|
 | `/summarize` | 5 richieste/giorno | 3 richieste/ora |
 | `/translate` | 15 richieste/giorno | 5 richieste/ora |
+| `/download-pdf` | 15 richieste/giorno | 5 richieste/ora |
+
+### Sicurezza
+
+- Upload limitato a 5 MB (`MAX_CONTENT_LENGTH`) per prevenire DoS
+- Nomi file sanificati e rinominati lato server (nessuna path traversal)
+- File temporanei rimossi subito dopo l'elaborazione, anche in caso di errore
+- Debug mode disattivato di default (`FLASK_DEBUG=1` per abilitarlo esplicitamente in sviluppo)
+
+---
+
+## 📜 Privacy & Termini
+
+I file caricati vengono elaborati e cancellati immediatamente dal server: nessun documento o riassunto viene conservato. Il testo estratto è inviato a Google Gemini per la generazione del riassunto/traduzione. Per i dettagli completi (dati trattati, terze parti coinvolte, limiti di responsabilità), consulta la pagina [Privacy & Termini](/legal) disponibile nell'app in esecuzione.
 
 ---
 

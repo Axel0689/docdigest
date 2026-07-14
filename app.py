@@ -176,6 +176,10 @@ TRADUZIONE:"""
 def index():
     return render_template('index.html')
 
+@app.route('/legal')
+def legal():
+    return render_template('legal.html')
+
 @app.route('/summarize', methods=['POST'])
 @limiter.limit("5 per day")
 @limiter.limit("3 per hour")
