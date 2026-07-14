@@ -1,6 +1,6 @@
-# 🤖 DocDigest - AI Document Summarization
+# 🤖 DocDigest AI - Document Summarization with AI
 
-![DocDigest Banner](static/logo.png)
+<img src="static/logo.png" width="300" height="200" alt="Logo DocDigest AI">
 
 > **Intelligent document summarization powered by Google Gemini AI**
 
@@ -13,7 +13,7 @@
 
 ## 📋 Descrizione
 
-**DocDigest** è un'applicazione web AI-powered che genera riassunti intelligenti da documenti in pochi secondi. Supporta più formati di file, lingue e offre funzionalità di traduzione automatica basate su Google Gemini 2.5 Flash.
+**DocDigest AI** è un'applicazione web AI-powered che genera riassunti intelligenti da documenti in pochi secondi. Supporta più formati di file, lingue e offre funzionalità di traduzione automatica basate su Google Gemini 2.5 Flash.
 
 ---
 
