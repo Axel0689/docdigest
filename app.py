@@ -12,8 +12,10 @@ from reportlab.lib.units import inch
 from io import BytesIO
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.utils import secure_filename
 import tempfile
 import time
+import uuid
 
 
 # Carica variabili d'ambiente
@@ -34,6 +36,10 @@ limiter = Limiter(
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Limite dimensione richiesta (upload) per prevenire DoS: 5 MB
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+# Tetto di caratteri inviati al modello, per contenere costi/latenza
+MAX_TEXT_CHARS = 200_000
 
 # Configura Gemini
 print("Configurazione Google Gemini API...")
@@ -61,8 +67,11 @@ def allowed_file(filename):
 
 def read_txt_file(filepath):
     """Legge file TXT"""
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return f.read()
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return f.read()
+    except UnicodeDecodeError:
+        return "Errore nella lettura del TXT: il file non è codificato in UTF-8 valido"
 
 def read_pdf_file(filepath):
     """Legge file PDF"""
@@ -180,51 +189,74 @@ def summarize():
         return jsonify({'error': 'Nome file vuoto'}), 400
     
     if file and allowed_file(file.filename):
-        filename = file.filename
+        # Sanifica il nome file e genera un nome univoco lato server:
+        # non ci si fida mai del filename fornito dal client (rischio path traversal).
+        safe_original = secure_filename(file.filename)
+        ext = safe_original.rsplit('.', 1)[1].lower() if '.' in safe_original else ''
+        if ext not in ALLOWED_EXTENSIONS:
+            return jsonify({'error': 'Formato file non supportato'}), 400
+
+        filename = f"{uuid.uuid4().hex}.{ext}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        # Ottieni parametri
-        max_words = int(request.form.get('length', 150))
+
+        # Difesa in profondità: verifica che il path risolto resti dentro UPLOAD_FOLDER
+        upload_root = os.path.realpath(app.config['UPLOAD_FOLDER'])
+        resolved_path = os.path.realpath(filepath)
+        if os.path.commonpath([upload_root, resolved_path]) != upload_root:
+            return jsonify({'error': 'Nome file non valido'}), 400
+
+        # Ottieni parametri con parsing difensivo
+        try:
+            max_words = int(request.form.get('length', 150))
+        except (TypeError, ValueError):
+            max_words = 150
+        max_words = max(50, min(max_words, 300))
+
         ui_language = request.form.get('ui_language', 'it')
         summary_format = request.form.get('format', 'paragraph')
         if summary_format not in ('paragraph', 'bullet'):
             summary_format = 'paragraph'
-        
-        print(f"DEBUG: Lunghezza richiesta = {max_words}")
-        print(f"DEBUG: File caricato = {filename}")
-        print(f"DEBUG: Lingua UI = {ui_language}")
-        
-        # Leggi file
-        text = read_file(filepath)
-        
-        if text.startswith("Errore"):
-            os.remove(filepath)
-            return jsonify({'error': text}), 400
-        
-        original_word_count = len(text.split())
-        print(f"DEBUG: Testo estratto - {original_word_count} parole")
-        
-        # Genera riassunto nella lingua dell'UI
-        summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
-        
-        actual_summary_word_count = len(summary.split())
-        
-        print(f"DEBUG: Parole originali = {original_word_count}")
-        print(f"DEBUG: Parole riassunto = {actual_summary_word_count}")
-        
-        # Rimuovi il file dopo l'elaborazione
-        os.remove(filepath)
-        
-        result = {
-            'original_length': original_word_count,
-            'summary': summary,
-            'summary_length': actual_summary_word_count,
-            'format': summary_format
-        }
-        
-        return jsonify(result)
-    
+
+        try:
+            file.save(filepath)
+
+            print(f"DEBUG: Lunghezza richiesta = {max_words}")
+            print(f"DEBUG: File caricato = {filename}")
+            print(f"DEBUG: Lingua UI = {ui_language}")
+
+            # Leggi file
+            text = read_file(filepath)
+
+            if text.startswith("Errore"):
+                return jsonify({'error': text}), 400
+
+            if len(text) > MAX_TEXT_CHARS:
+                text = text[:MAX_TEXT_CHARS]
+
+            original_word_count = len(text.split())
+            print(f"DEBUG: Testo estratto - {original_word_count} parole")
+
+            # Genera riassunto nella lingua dell'UI
+            summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
+
+            actual_summary_word_count = len(summary.split())
+
+            print(f"DEBUG: Parole originali = {original_word_count}")
+            print(f"DEBUG: Parole riassunto = {actual_summary_word_count}")
+
+            result = {
+                'original_length': original_word_count,
+                'summary': summary,
+                'summary_length': actual_summary_word_count,
+                'format': summary_format
+            }
+
+            return jsonify(result)
+        finally:
+            # Rimuovi sempre il file temporaneo, anche in caso di eccezione
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
     return jsonify({'error': 'Formato file non supportato'}), 400
 
 @app.route('/translate', methods=['POST'])
@@ -232,13 +264,16 @@ def summarize():
 @limiter.limit("5 per hour")
 def translate():
     """Traduce il riassunto in un'altra lingua"""
-    data = request.get_json()
-    text = data.get('text', '')
+    data = request.get_json(silent=True) or {}
+    text = data.get('text', '') or ''
     target_language = data.get('target_language', 'en')
-    
+
     if not text:
         return jsonify({'error': 'Nessun testo da tradurre'}), 400
-    
+
+    if len(text) > MAX_TEXT_CHARS:
+        text = text[:MAX_TEXT_CHARS]
+
     translated = translate_text(text, target_language)
     
     return jsonify({
@@ -247,15 +282,19 @@ def translate():
     })
 
 @app.route('/download-pdf', methods=['POST'])
+@limiter.limit("15 per day")
+@limiter.limit("5 per hour")
 def download_pdf():
     from reportlab.lib import colors
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    
-    data = request.get_json()
-    summary = data.get('summary', '')
-    custom_title = data.get('custom_title', '').strip()
+
+    data = request.get_json(silent=True) or {}
+    summary = (data.get('summary', '') or '')[:MAX_TEXT_CHARS]
+    custom_title = (data.get('custom_title', '') or '').strip()[:200]
     summary_format = data.get('format', 'paragraph')
+    if summary_format not in ('paragraph', 'bullet'):
+        summary_format = 'paragraph'
     
     # Crea PDF in memoria
     buffer = BytesIO()
@@ -354,5 +393,15 @@ def download_pdf():
         'Content-Disposition': 'attachment; filename=docdigest_summary.pdf'
     }
 
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'no-referrer-when-downgrade'
+    return response
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Il debugger interattivo di Werkzeug espone RCE se raggiungibile: mai in produzione.
+    debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
+    app.run(debug=debug_mode)
