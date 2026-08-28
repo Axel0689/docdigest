@@ -662,6 +662,52 @@
         </div>
       </div>
 
+      <!-- Input Mode Switcher -->
+      <div
+        class="input-mode-switcher"
+        style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;"
+      >
+        <button class="mode-btn active" data-mode="file" data-i18n="mode-file">
+          📁 Carica File
+        </button>
+        <button class="mode-btn" data-mode="url" data-i18n="mode-url">
+          🔗 Da URL
+        </button>
+      </div>
+
+      <!-- Controls (shared between File and URL modes) -->
+      <div class="controls">
+        <div class="control-group">
+          <label class="control-label" data-i18n="length-label"
+            >Lunghezza Riassunto:</label
+          >
+          <select id="summaryLengthSelector">
+            <option value="50" data-i18n="length-short">
+              📝 Breve (~50 parole)
+            </option>
+            <option value="150" selected data-i18n="length-medium">
+              📄 Medio (~150 parole)
+            </option>
+            <option value="300" data-i18n="length-long">
+              📚 Lungo (~300 parole)
+            </option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label" data-i18n="format-label"
+            >Formato Riassunto:</label
+          >
+          <select id="summaryFormatSelector">
+            <option value="paragraph" selected data-i18n="format-paragraph">
+              📃 Paragrafo
+            </option>
+            <option value="bullet" data-i18n="format-bullet">
+              📋 Punti Chiave
+            </option>
+          </select>
+        </div>
+      </div>
+
       <!-- Upload Area -->
       <div class="upload-area">
         <div class="upload-icon">
@@ -678,45 +724,48 @@
           Clicca per selezionare un file .txt, .pdf o .docx
         </p>
 
-        <!-- Controls -->
-        <div class="controls">
-          <div class="control-group">
-            <label class="control-label" data-i18n="length-label"
-              >Lunghezza Riassunto:</label
-            >
-            <select id="summaryLengthSelector">
-              <option value="50" data-i18n="length-short">
-                📝 Breve (~50 parole)
-              </option>
-              <option value="150" selected data-i18n="length-medium">
-                📄 Medio (~150 parole)
-              </option>
-              <option value="300" data-i18n="length-long">
-                📚 Lungo (~300 parole)
-              </option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label class="control-label" data-i18n="format-label"
-              >Formato Riassunto:</label
-            >
-            <select id="summaryFormatSelector">
-              <option value="paragraph" selected data-i18n="format-paragraph">
-                📃 Paragrafo
-              </option>
-              <option value="bullet" data-i18n="format-bullet">
-                📋 Punti Chiave
-              </option>
-            </select>
-          </div>
-        </div>
-
         <label for="fileInput" class="upload-btn">
           <i class="fas fa-folder-open"></i>
           <span data-i18n="choose-file">Scegli File</span>
         </label>
         <input type="file" id="fileInput" accept=".txt,.pdf,.docx" />
         <p class="file-info" id="fileInfo"></p>
+      </div>
+
+      <!-- URL Area -->
+      <div class="url-area" id="urlArea" style="display: none;">
+        <div class="upload-icon">
+          <i class="fas fa-link"></i>
+        </div>
+        <p
+          style="
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+            font-size: 15px;
+          "
+          data-i18n="url-text"
+        >
+          Incolla il link di un articolo o pagina web
+        </p>
+        <input
+          type="url"
+          id="urlInput"
+          placeholder="https://example.com/article"
+          style="
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            font-size: 14px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            margin-bottom: 15px;
+          "
+        />
+        <button id="summarizeUrlBtn" class="upload-btn">
+          <i class="fas fa-magic"></i>
+          <span data-i18n="summarize-url-btn">Riassumi URL</span>
+        </button>
       </div>
 
       <!-- Loading -->
@@ -913,6 +962,12 @@
           "format-bullet": "📋 Punti Chiave",
           "download-txt": "Scarica TXT",
           "download-pdf": "Scarica PDF",
+          "mode-file": "📁 Carica File",
+          "mode-url": "🔗 Da URL",
+          "url-text": "Incolla il link di un articolo o pagina web",
+          "summarize-url-btn": "Riassumi URL",
+          "url-error-invalid": "URL non valido",
+          "url-error-fetch": "Impossibile leggere il contenuto della pagina",
           "banner-title": "Progetto Portfolio Demo",
           "banner-limits": "Limite: 3 richieste/ora • 5 richieste/giorno",
           "modal-limit-title": "Limite Giornaliero Raggiunto",
@@ -941,6 +996,12 @@
           "format-bullet": "📋 Key Points",
           "download-txt": "Download TXT",
           "download-pdf": "Download PDF",
+          "mode-file": "📁 Upload File",
+          "mode-url": "🔗 From URL",
+          "url-text": "Paste an article or web page link",
+          "summarize-url-btn": "Summarize URL",
+          "url-error-invalid": "Invalid URL",
+          "url-error-fetch": "Unable to read page content",
           "banner-title": "Portfolio Demo Project",
           "banner-limits": "Rate limited: 3 requests/hour • 5 requests/day",
           "modal-limit-title": "Daily Limit Reached",
@@ -1059,6 +1120,89 @@
 
           if (response.status === 429) {
             // Rate limit raggiunto
+            showRateLimitModal();
+            return;
+          }
+
+          if (response.ok) {
+            renderSummary(data.summary, data.format || "paragraph");
+            document.getElementById("originalLength").textContent =
+              data.original_length;
+            document.getElementById("summaryLength").textContent =
+              data.summary_length;
+
+            const reduction = Math.round(
+              (1 - data.summary_length / data.original_length) * 100,
+            );
+            document.getElementById("reduction").textContent = reduction + "%";
+
+            result.style.display = "block";
+          } else {
+            error.textContent = data.error || "Unknown error";
+            error.style.display = "block";
+          }
+        } catch (err) {
+          loading.style.display = "none";
+          error.textContent = "Connection error. Please try again.";
+          error.style.display = "block";
+        }
+      }
+
+      // Input Mode Switcher (File / URL)
+      const uploadArea = document.querySelector(".upload-area");
+      const urlArea = document.getElementById("urlArea");
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document
+            .querySelectorAll(".mode-btn")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+
+          const mode = this.dataset.mode;
+          uploadArea.style.display = mode === "file" ? "block" : "none";
+          urlArea.style.display = mode === "url" ? "block" : "none";
+          error.style.display = "none";
+        });
+      });
+
+      // Summarize from URL
+      const urlInput = document.getElementById("urlInput");
+      document
+        .getElementById("summarizeUrlBtn")
+        .addEventListener("click", function () {
+          summarizeUrl();
+        });
+
+      async function summarizeUrl() {
+        const url = urlInput.value.trim();
+
+        if (!url) {
+          result.style.display = "none";
+          error.textContent = translations[currentLanguage]["url-error-invalid"];
+          error.style.display = "block";
+          return;
+        }
+
+        result.style.display = "none";
+        error.style.display = "none";
+        loading.style.display = "block";
+
+        try {
+          const response = await fetch("/summarize-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: url,
+              length: document.getElementById("summaryLengthSelector").value,
+              ui_language: currentLanguage,
+              format: document.getElementById("summaryFormatSelector").value,
+            }),
+          });
+
+          const data = await response.json();
+          loading.style.display = "none";
+
+          if (response.status === 429) {
             showRateLimitModal();
             return;
           }

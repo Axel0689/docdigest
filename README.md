@@ -6,21 +6,22 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com)
-[![Gemini](https://img.shields.io/badge/Google%20Gemini-2.5%20Flash-orange.svg)](https://ai.google.dev)
+[![Gemini](https://img.shields.io/badge/Google%20Gemini-3.5%20Flash-orange.svg)](https://ai.google.dev)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 ---
 
 ## 📋 Descrizione
 
-**DocDigest AI** è un'applicazione web AI-powered che genera riassunti intelligenti da documenti in pochi secondi. Supporta più formati di file, lingue e offre funzionalità di traduzione automatica basate su Google Gemini 2.5 Flash.
+**DocDigest AI** è un'applicazione web AI-powered che genera riassunti intelligenti da documenti (o da un URL) in pochi secondi. Supporta più formati di file, lingue e offre funzionalità di traduzione automatica basate su Google Gemini 3.5 Flash.
 
 ---
 
 ## ✨ Funzionalità
 
 - 📄 **Multi-Formato**: Supporta file TXT, PDF e DOCX
-- 🧠 **AI Avanzata**: Powered by Google Gemini 2.5 Flash
+- 🔗 **Riassunto da URL**: Incolla il link di un articolo/pagina web e ottieni il riassunto senza scaricare nulla
+- 🧠 **AI Avanzata**: Powered by Google Gemini 3.5 Flash
 - 📏 **Lunghezza Personalizzabile**: Breve (~50 parole), Medio (~150), Lungo (~300)
 - 📋 **Formato Riassunto**: Prosa (paragrafo) oppure Punti Chiave (5-10 bullet)
 - 🌍 **Multi-Lingua UI**: Interfaccia in Italiano e Inglese
@@ -37,11 +38,13 @@
 ### Backend
 - **Python 3.10+**
 - **Flask** - Web framework
-- **Google Gemini 2.5 Flash** - AI Model
+- **Google Gemini 3.5 Flash** - AI Model
 - **PyPDF2** - Lettura file PDF
 - **python-docx** - Lettura file DOCX
 - **ReportLab** - Generazione PDF
 - **Flask-Limiter** - Rate limiting
+- **Requests** - Fetch contenuto da URL
+- **BeautifulSoup4** - Estrazione testo leggibile da pagine web
 
 ### Frontend
 - **HTML5 / CSS3 / JavaScript**
@@ -146,6 +149,7 @@ Apri il browser su: http://127.0.0.1:5000
 | Endpoint | Limite Giornaliero | Limite Orario |
 |----------|-------------------|---------------|
 | `/summarize` | 5 richieste/giorno | 3 richieste/ora |
+| `/summarize-url` | 5 richieste/giorno | 3 richieste/ora |
 | `/translate` | 15 richieste/giorno | 5 richieste/ora |
 | `/download-pdf` | 15 richieste/giorno | 5 richieste/ora |
 
@@ -155,6 +159,7 @@ Apri il browser su: http://127.0.0.1:5000
 - Nomi file sanificati e rinominati lato server (nessuna path traversal)
 - File temporanei rimossi subito dopo l'elaborazione, anche in caso di errore
 - Debug mode disattivato di default (`FLASK_DEBUG=1` per abilitarlo esplicitamente in sviluppo)
+- Riassunto da URL: solo schemi `http`/`https`, protezione anti-SSRF (blocco IP privati/loopback/link-local, anche su redirect)
 
 ---
 
@@ -167,7 +172,7 @@ I file caricati vengono elaborati e cancellati immediatamente dal server: nessun
 ## 🗺️ Roadmap
 
 - [ ] 🔗 URL Sharing (condivisione riassunti via link)
-- [ ] 🌐 Riassunto da URL web
+- [x] 🌐 Riassunto da URL web
 - [ ] 📧 Condivisione via Email
 - [x] ⚡ Bullet Points Summary
 - [ ] 💾 Storico Riassunti (con autenticazione)

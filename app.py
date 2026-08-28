@@ -16,6 +16,11 @@ from werkzeug.utils import secure_filename
 import tempfile
 import time
 import uuid
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
+import ipaddress
+import socket
 
 
 # Carica variabili d'ambiente
@@ -51,7 +56,7 @@ def _gemini_generate(prompt, retries=3):
     for attempt in range(retries):
         try:
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-3.5-flash',
                 contents=prompt
             )
             return response.text.strip()
@@ -107,6 +112,87 @@ def read_file(filepath):
         return read_docx_file(filepath)
     else:
         return "Formato file non supportato"
+
+def _is_public_ip(host):
+    """Verifica che l'host non risolva a un IP privato/loopback/link-local (protezione SSRF)."""
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        return False
+
+    for info in infos:
+        ip_str = info[4][0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            return False
+    return True
+
+def is_safe_url(url):
+    """Valida schema http/https e blocca URL che puntano a IP privati/interni."""
+    try:
+        result = urlparse(url)
+    except Exception:
+        return False
+
+    if result.scheme not in ('http', 'https') or not result.netloc:
+        return False
+
+    host = result.hostname
+    if not host:
+        return False
+
+    return _is_public_ip(host)
+
+def extract_text_from_url(url):
+    """Scarica una pagina web ed estrae il testo leggibile dell'articolo."""
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/120.0 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=8, allow_redirects=False)
+
+        # Segui manualmente al massimo un redirect, ri-validando la destinazione
+        # per evitare che un URL "sicuro" reindirizzi verso un host interno (SSRF).
+        redirect_hops = 0
+        while response.is_redirect and redirect_hops < 3:
+            location = response.headers.get('Location')
+            if not location or not is_safe_url(location):
+                return None
+            response = requests.get(location, headers=headers, timeout=8, allow_redirects=False)
+            redirect_hops += 1
+
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        for tag in soup(['script', 'style', 'nav', 'footer',
+                          'header', 'aside', 'form', 'iframe']):
+            tag.decompose()
+
+        article = soup.find('article')
+        container = article if article else soup.body
+
+        if not container:
+            return None
+
+        paragraphs = container.find_all('p')
+        text = '\n'.join(
+            p.get_text(strip=True) for p in paragraphs
+            if len(p.get_text(strip=True)) > 40
+        )
+
+        return text.strip() if text.strip() else None
+
+    except requests.exceptions.RequestException:
+        return None
+    except Exception:
+        return None
 
 def generate_summary(text, max_words=150, language="auto", summary_format="paragraph"):
     """Genera riassunto usando Gemini"""
@@ -262,6 +348,52 @@ def summarize():
                 os.remove(filepath)
 
     return jsonify({'error': 'Formato file non supportato'}), 400
+
+@app.route('/summarize-url', methods=['POST'])
+@limiter.limit("5 per day")
+@limiter.limit("3 per hour")
+def summarize_url():
+    data = request.get_json(silent=True) or {}
+    url = (data.get('url', '') or '').strip()
+
+    if not url:
+        return jsonify({'error': 'URL mancante'}), 400
+
+    if not is_safe_url(url):
+        return jsonify({'error': 'URL non valido'}), 400
+
+    try:
+        max_words = int(data.get('length', 150))
+    except (TypeError, ValueError):
+        max_words = 150
+    max_words = max(50, min(max_words, 300))
+
+    ui_language = data.get('ui_language', 'it')
+    summary_format = data.get('format', 'paragraph')
+    if summary_format not in ('paragraph', 'bullet'):
+        summary_format = 'paragraph'
+
+    text = extract_text_from_url(url)
+
+    if not text or len(text.split()) < 30:
+        return jsonify({'error': 'Impossibile estrarre contenuto sufficiente da questa pagina'}), 400
+
+    if len(text) > MAX_TEXT_CHARS:
+        text = text[:MAX_TEXT_CHARS]
+
+    original_word_count = len(text.split())
+
+    summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
+
+    actual_summary_word_count = len(summary.split())
+
+    return jsonify({
+        'original_length': original_word_count,
+        'summary': summary,
+        'summary_length': actual_summary_word_count,
+        'format': summary_format,
+        'source_url': url
+    })
 
 @app.route('/translate', methods=['POST'])
 @limiter.limit("15 per day")
