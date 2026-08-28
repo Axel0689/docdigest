@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST http://127.0.0.1:5000/summarize-url -H \"Content-Type: application/json\" -d '{\"url\":\"https://en.wikipedia.org/wiki/Artificial_intelligence\",\"length\":50,\"ui_language\":\"en\",\"format\":\"paragraph\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/summarize-url -H \"Content-Type: application/json\" -d '{\"url\":\"https://en.wikipedia.org/wiki/Artificial_intelligence\",\"length\":50,\"ui_language\":\"en\",\"format\":\"bullet\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/summarize-url -H \"Content-Type: application/json\" -d '{\"url\":\"https://en.wikipedia.org/wiki/This_page_does_not_exist_xyz_abc_123\"}')",
+      "Bash(netstat -ano)",
+      "Bash(curl -s http://127.0.0.1:5000/)",
+      "Bash(taskkill //PID 16776 //F)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git restore *)"
+    ]
+  }
+}
