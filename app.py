@@ -239,10 +239,7 @@ TESTO DA RIASSUMERE:
 
 RIASSUNTO:"""
 
-    try:
-        return _gemini_generate(prompt)
-    except Exception as e:
-        return f"Errore nella generazione: {str(e)}"
+    return _gemini_generate(prompt)
 
 def translate_text(text, target_language):
     """Traduce testo usando Gemini"""
@@ -265,11 +262,8 @@ TESTO DA TRADURRE:
 {text}
 
 TRADUZIONE:"""
-    
-    try:
-        return _gemini_generate(prompt)
-    except Exception as e:
-        return f"Errore nella traduzione: {str(e)}"
+
+    return _gemini_generate(prompt)
     
 # Route per la pagina principale
 @app.route('/')
@@ -328,7 +322,11 @@ def summarize():
             original_word_count = len(text.split())
 
             # Genera riassunto nella lingua dell'UI
-            summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
+            try:
+                summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
+            except Exception as e:
+                print(f"ERROR: generazione riassunto fallita: {e}")
+                return jsonify({'error': 'Errore nella generazione del riassunto. Riprova tra qualche istante.'}), 502
 
             actual_summary_word_count = len(summary.split())
 
@@ -374,7 +372,11 @@ def summarize_url():
 
     original_word_count = len(text.split())
 
-    summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
+    try:
+        summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
+    except Exception as e:
+        print(f"ERROR: generazione riassunto fallita: {e}")
+        return jsonify({'error': 'Errore nella generazione del riassunto. Riprova tra qualche istante.'}), 502
 
     actual_summary_word_count = len(summary.split())
 
@@ -401,8 +403,12 @@ def translate():
     if len(text) > MAX_TEXT_CHARS:
         text = text[:MAX_TEXT_CHARS]
 
-    translated = translate_text(text, target_language)
-    
+    try:
+        translated = translate_text(text, target_language)
+    except Exception as e:
+        print(f"ERROR: traduzione fallita: {e}")
+        return jsonify({'error': 'Errore nella traduzione. Riprova tra qualche istante.'}), 502
+
     return jsonify({
         'translated_text': translated,
         'target_language': target_language
