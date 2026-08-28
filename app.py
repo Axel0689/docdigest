@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify
 from google import genai
-from google.genai import types
 import os
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -45,6 +44,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 # Tetto di caratteri inviati al modello, per contenere costi/latenza
 MAX_TEXT_CHARS = 200_000
+DEFAULT_SUMMARY_WORDS = 150
+MIN_SUMMARY_WORDS = 50
+MAX_SUMMARY_WORDS = 300
 
 # Configura Gemini
 print("Configurazione Google Gemini API...")
@@ -69,6 +71,18 @@ def _gemini_generate(prompt, retries=3):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def parse_max_words(raw_value):
+    """Converte in intero e limita la lunghezza richiesta per il riassunto."""
+    try:
+        max_words = int(raw_value)
+    except (TypeError, ValueError):
+        max_words = DEFAULT_SUMMARY_WORDS
+    return max(MIN_SUMMARY_WORDS, min(max_words, MAX_SUMMARY_WORDS))
+
+def normalize_summary_format(raw_format):
+    """Restituisce un formato di riassunto valido, con fallback a 'paragraph'."""
+    return raw_format if raw_format in ('paragraph', 'bullet') else 'paragraph'
 
 def read_txt_file(filepath):
     """Legge file TXT"""
@@ -295,24 +309,12 @@ def summarize():
         if os.path.commonpath([upload_root, resolved_path]) != upload_root:
             return jsonify({'error': 'Nome file non valido'}), 400
 
-        # Ottieni parametri con parsing difensivo
-        try:
-            max_words = int(request.form.get('length', 150))
-        except (TypeError, ValueError):
-            max_words = 150
-        max_words = max(50, min(max_words, 300))
-
+        max_words = parse_max_words(request.form.get('length', DEFAULT_SUMMARY_WORDS))
         ui_language = request.form.get('ui_language', 'it')
-        summary_format = request.form.get('format', 'paragraph')
-        if summary_format not in ('paragraph', 'bullet'):
-            summary_format = 'paragraph'
+        summary_format = normalize_summary_format(request.form.get('format', 'paragraph'))
 
         try:
             file.save(filepath)
-
-            print(f"DEBUG: Lunghezza richiesta = {max_words}")
-            print(f"DEBUG: File caricato = {filename}")
-            print(f"DEBUG: Lingua UI = {ui_language}")
 
             # Leggi file
             text = read_file(filepath)
@@ -324,15 +326,11 @@ def summarize():
                 text = text[:MAX_TEXT_CHARS]
 
             original_word_count = len(text.split())
-            print(f"DEBUG: Testo estratto - {original_word_count} parole")
 
             # Genera riassunto nella lingua dell'UI
             summary = generate_summary(text, max_words=max_words, language=ui_language, summary_format=summary_format)
 
             actual_summary_word_count = len(summary.split())
-
-            print(f"DEBUG: Parole originali = {original_word_count}")
-            print(f"DEBUG: Parole riassunto = {actual_summary_word_count}")
 
             result = {
                 'original_length': original_word_count,
@@ -362,16 +360,9 @@ def summarize_url():
     if not is_safe_url(url):
         return jsonify({'error': 'URL non valido'}), 400
 
-    try:
-        max_words = int(data.get('length', 150))
-    except (TypeError, ValueError):
-        max_words = 150
-    max_words = max(50, min(max_words, 300))
-
+    max_words = parse_max_words(data.get('length', DEFAULT_SUMMARY_WORDS))
     ui_language = data.get('ui_language', 'it')
-    summary_format = data.get('format', 'paragraph')
-    if summary_format not in ('paragraph', 'bullet'):
-        summary_format = 'paragraph'
+    summary_format = normalize_summary_format(data.get('format', 'paragraph'))
 
     text = extract_text_from_url(url)
 
@@ -422,15 +413,11 @@ def translate():
 @limiter.limit("5 per hour")
 def download_pdf():
     from reportlab.lib import colors
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
 
     data = request.get_json(silent=True) or {}
     summary = (data.get('summary', '') or '')[:MAX_TEXT_CHARS]
     custom_title = (data.get('custom_title', '') or '').strip()[:200]
-    summary_format = data.get('format', 'paragraph')
-    if summary_format not in ('paragraph', 'bullet'):
-        summary_format = 'paragraph'
+    summary_format = normalize_summary_format(data.get('format', 'paragraph'))
     
     # Crea PDF in memoria
     buffer = BytesIO()
