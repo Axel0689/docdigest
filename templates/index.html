@@ -789,7 +789,7 @@
             <i class="fas fa-sparkles"></i>
             <span data-i18n="result-title">Riassunto Generato:</span>
           </div>
-          <p class="result-text" id="summaryText"></p>
+          <div class="result-text" id="summaryText"></div>
         </div>
 
         <!-- Stats -->
@@ -1015,6 +1015,45 @@
       let currentSummaryRaw = "";
       let currentSummaryFormat = "paragraph";
 
+      // Rendering Markdown minimale (grassetto, corsivo, codice inline).
+      // Esegue sempre prima l'escape HTML per evitare injection dal testo generato dal modello.
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function renderInlineMarkdown(text) {
+        let html = escapeHtml(text);
+        html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
+        html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
+        html = html.replace(/(?<![a-zA-Z0-9])_(.+?)_(?![a-zA-Z0-9])/g, "<em>$1</em>");
+        html = html.replace(/`(.+?)`/g, "<code>$1</code>");
+        return html;
+      }
+
+      function renderParagraphMarkdown(rawText) {
+        const blocks = rawText.split(/\n\s*\n/);
+        return blocks
+          .map((block) => {
+            const trimmed = block.trim();
+            if (!trimmed) return "";
+            const headerMatch = trimmed.match(/^#{1,6}\s+(.*)$/);
+            if (headerMatch) {
+              return `<p><strong>${renderInlineMarkdown(headerMatch[1])}</strong></p>`;
+            }
+            const withBreaks = trimmed
+              .split("\n")
+              .map((line) => renderInlineMarkdown(line))
+              .join("<br>");
+            return `<p>${withBreaks}</p>`;
+          })
+          .filter(Boolean)
+          .join("");
+      }
+
       function renderSummary(rawText, format) {
         currentSummaryRaw = rawText;
         currentSummaryFormat = format;
@@ -1031,12 +1070,12 @@
           lines.forEach((line) => {
             const li = document.createElement("li");
             li.className = "summary-bullet-item";
-            li.textContent = line;
+            li.innerHTML = renderInlineMarkdown(line);
             ul.appendChild(li);
           });
           summaryTextEl.appendChild(ul);
         } else {
-          summaryTextEl.textContent = rawText;
+          summaryTextEl.innerHTML = renderParagraphMarkdown(rawText);
         }
       }
 
