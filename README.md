@@ -28,7 +28,7 @@
 - 🔄 **Traduzione Automatica**: Traduci il riassunto in 5 lingue (IT, EN, ES, FR, DE)
 - 📊 **Statistiche Real-Time**: Parole originali, riassunto e percentuale di riduzione
 - 📥 **Export**: Scarica il riassunto in formato TXT o PDF (bullet inclusi)
-- 🎨 **3 Temi**: Corporate (blu), Dark (viola), Sunset (arancione)
+- 🎨 **Tema Chiaro/Scuro**: toggle manuale, con rilevamento automatico delle preferenze di sistema e persistenza tra le visite
 - 🔐 **Rate Limiting**: 5 riassunti/giorno per utente (demo portfolio)
 
 ---
@@ -125,14 +125,11 @@ Apri il browser su: http://127.0.0.1:5000
 
 ## 📸 Screenshots
 
-### Tema Corporate (Default) 💼
-![Corporate Theme](/static/corporate.png)
+### Tema Chiaro
+![Light Theme](/static/corporate.png)
 
-### Tema Dark 🌙
+### Tema Scuro
 ![Dark Theme](/static/dark.png)
-
-### Tema Sunset 🌅
-![Sunset Theme](/static/sunset.png)
 
 ---
 
