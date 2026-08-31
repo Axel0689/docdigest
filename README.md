@@ -126,10 +126,10 @@ Apri il browser su: http://127.0.0.1:5000
 ## 📸 Screenshots
 
 ### Tema Chiaro
-![Light Theme](/static/corporate.png)
+![Light Theme](/static/theme_light.png)
 
 ### Tema Scuro
-![Dark Theme](/static/dark.png)
+![Dark Theme](/static/theme_dark.png)
 
 ---
 
